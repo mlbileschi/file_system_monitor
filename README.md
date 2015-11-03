@@ -21,12 +21,12 @@ You may need to agree to the XCode TOS: `sudo xcodebuild -license`.
 
 Continuously run `mvn test`, excluding any maven generated files 
 ```
-ruby file_system_monitor.rb -i "." -e "target" -c "mvn test"
+file_system_monitor -i "." -e "target" -c "mvn test"
 ```
 
 Continuously run `pants test`, excluding  
 ```
-ruby file_system_monitor.rb \
+file_system_monitor \
     -i "." \
     -e ".git"
     -e ".pants.d" \
