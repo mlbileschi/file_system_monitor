@@ -16,7 +16,8 @@ end
 def parse_args
   help_string = 'When filesystem changes are detected, run a command.
   Kill any previous invocations of the command. Use with autosaving IDEs
-  for maximum benefit (e.g. IntelliJ\'s auto save after 1 second of inactivity).'
+  for maximum benefit (e.g. IntelliJ\'s auto save after 1 second of inactivity).
+  More information is at https://github.com/mlbileschi/file_system_monitor'
 
   include_paths = []
   exclude_paths = []
