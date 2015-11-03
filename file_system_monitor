@@ -1,10 +1,21 @@
-#!/usr/bin/ruby
-require 'rb-fsevent'
+#!/usr/bin/env ruby
+
 require 'optparse'
+
+begin
+  require 'rb-fsevent'
+  raise
+rescue
+  brew_prefix = `brew --prefix`.chomp
+  homebrew_directory_gem_path = "#{brew_prefix}/rvm/gems"
+  puts "Adding the directory #{homebrew_directory_gem_path} to the load path."
+  $LOAD_PATH.unshift(homebrew_directory_gem_path)
+end
+
 
 HELP_STRING = 'When filesystem changes are detected, run a command.
 Kill any previous invocations of the command. Use with autosaving IDEs
-for maximum benefit (e.g. IntelliJ\'s auto save after 1 second of inactivity)'
+for maximum benefit (e.g. IntelliJ\'s auto save after 1 second of inactivity).'
 
 include_paths = []
 exclude_paths = []
