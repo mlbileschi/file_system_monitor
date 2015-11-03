@@ -5,6 +5,8 @@ Take a command and a path, and run that command whenever there are any changes t
 
 It works especially well with IntelliJ's auto-save after x idle seconds (cmd + , then search for "save idle"), or any other auto-save IDE setting.
 
+Intended for OSX.
+
 ### Give me that! ###
 
 ```
@@ -12,6 +14,8 @@ brew tap mlbileschi/tap
 brew install mlbileschi/tap/file_system_monitor
 file_system_monitor --help
 ```
+
+You may need to agree to the XCode TOS: `sudo xcodebuild -license`.
 
 ### Examples ###
 
