@@ -19,12 +19,12 @@ You may need to agree to the XCode TOS: `sudo xcodebuild -license`.
 
 ### Examples ###
 
-Continuously run `mvn test`, excluding any maven generated files 
+Continuously run `mvn test`, excluding any maven generated files:
 ```
 file_system_monitor -i "." -e "target" -c "mvn test"
 ```
 
-Continuously run `pants test`, excluding  
+Continuously run `pants test`, excluding git and tmp pants files:
 ```
 file_system_monitor \
     -i "." \
