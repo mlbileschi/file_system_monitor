@@ -1,88 +1,102 @@
 #!/usr/bin/env ruby
 
-require 'optparse'
+def import_dependencies
+  require 'optparse'
 
-begin
-  require 'rb-fsevent'
-  raise
-rescue
-  brew_prefix = `brew --prefix`.chomp
-  homebrew_directory_gem_path = "#{brew_prefix}/rvm/gems"
-  puts "Adding the directory #{homebrew_directory_gem_path} to the load path."
-  $LOAD_PATH.unshift(homebrew_directory_gem_path)
+  begin
+    require 'rb-fsevent'
+  rescue
+    brew_prefix = `brew --prefix`.chomp
+    homebrew_directory_gem_path = "#{brew_prefix}/rvm/gems"
+    puts "Adding the directory #{homebrew_directory_gem_path} to the load path."
+    $LOAD_PATH.unshift(homebrew_directory_gem_path)
+  end
 end
 
+def parse_args
+  help_string = 'When filesystem changes are detected, run a command.
+  Kill any previous invocations of the command. Use with autosaving IDEs
+  for maximum benefit (e.g. IntelliJ\'s auto save after 1 second of inactivity).'
 
-HELP_STRING = 'When filesystem changes are detected, run a command.
-Kill any previous invocations of the command. Use with autosaving IDEs
-for maximum benefit (e.g. IntelliJ\'s auto save after 1 second of inactivity).'
+  include_paths = []
+  exclude_paths = []
+  command = nil
 
-include_paths = []
-exclude_paths = []
-command = nil
-OptionParser.new do |opts|
-  opts.banner = "Usage: ruby file_system_monitor.rb [options]\n\n#{HELP_STRING}\n\n"
+  OptionParser.new do |opts|
+    opts.banner = "Usage: ruby file_system_monitor.rb [options]\n\n#{help_string}\n\n"
 
-  opts.on_tail("-h", "--help", "Show this message") do
-    puts opts
+    opts.on_tail("-h", "--help", "Show this message") do
+      puts opts
+      exit
+    end
+
+    opts.on("-i", "--include-path p", "Add path to watch list. Multiple paths allowed. At least one is required.") do |p|
+      include_paths << p
+    end
+
+    opts.on("-x", "--exclude-pattern r", "Don't consider changes to files containing this pattern.") do |x|
+      exclude_paths << x
+    end
+
+
+    opts.on("-c", "--command c", "Run command when something in the paths changes. Required.") do |c|
+      command = c
+    end
+
+  end.parse!
+
+  if command.nil?
+    STDERR.puts('The command option is required. If you need more help, use --help.')
     exit
   end
 
-  opts.on("-i", "--include-path p", "Add path to watch list. Multiple paths allowed.") do |p|
-    include_paths << p
+  if include_paths.empty?
+    STDERR.puts('At least one include path is required. If you need more help, use --help.')
+    exit
   end
 
-  opts.on("-x", "--exclude-pattern r", "Don't consider changes to files containing this pattern.") do |x|
-    exclude_paths << x
-  end
-
-
-  opts.on("-c", "--command c", "Run command when something in the paths changes.") do |c|
-    command = c
-  end
-
-end.parse!
-
-class String
-  def colorize(color_code)
-    "\e[#{color_code}m#{self}\e[0m"
-  end
-
-  def blue
-    colorize(34)
-  end
+  [include_paths, exclude_paths, command]
 end
 
-puts "\nWatching paths #{include_paths}\n".blue
-if exclude_paths.length > 0
-  puts "but not paths containing #{exclude_paths}\n".blue
+def blue(s)
+  "\e[34m#{s}\e[0m"
 end
 
 def run(command)
-  puts "running #{command}".blue
-  pid = Process.spawn (command)
+  puts blue("running #{command}")
+  Process.spawn (command)
 end
 
 def kill(pid)
-  puts "-------------------------------------killing pid #{pid}---------------------------------".blue
+  puts blue("-------------------------------------killing pid #{pid}---------------------------------")
   system("kill -INT #{pid}")
 end
 
-def matches_any_of(potential_matches, patterns)
+# Tells if there's any mathces
+def should_be_excluded(potential_matches, exclude_paths)
   potential_matches.each do |potential_match|
-    if patterns.any? { |pattern| potential_match.match(/#{pattern}/i) }
+    if exclude_paths.any? { |pattern| potential_match.match(/#{pattern}/i) }
       return true
     end
   end
-  return false
+  false
+end
+
+import_dependencies
+
+include_paths, exclude_paths, command = parse_args
+
+puts blue("\nWatching paths #{include_paths}\n")
+if exclude_paths.length > 0
+  puts blue("but not paths containing #{exclude_paths}\n")
 end
 
 fsevent = FSEvent.new
 last_pid = run(command)
 
 fsevent.watch(include_paths) do |paths|
-  if !matches_any_of(paths, exclude_paths)
-    puts "\nfound change to #{paths}\n".blue
+  if !should_be_excluded(paths, exclude_paths)
+    puts blue("\nfound change to #{paths}\n")
     kill(last_pid)
     last_pid = run(command)
   end
